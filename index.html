@@ -1,0 +1,1775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ian.terryn — bootable portfolio v2.6</title>
+<meta name="description" content="Ian Terryn (nucleargoomba) — IT student, aspiring DevOps / Cloud Engineer. A bootable, weirder portfolio." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================== TOKENS ===================== */
+:root{
+  --bg: #07090d;
+  --bg-2: #0b0f15;
+  --panel: #0e131c;
+  --panel-2: #131927;
+  --line: #1c2330;
+  --line-2: #2a3344;
+  --text: #e6edf3;
+  --text-2: #c0c8d1;
+  --muted: #8b95a3;
+  --dim: #5a6473;
+
+  --accent: oklch(0.84 0.18 152);
+  --accent-soft: oklch(0.84 0.18 152 / 0.14);
+  --accent-line: oklch(0.84 0.18 152 / 0.4);
+  --cyan: oklch(0.78 0.13 220);
+  --magenta: oklch(0.74 0.2 340);
+  --gold: oklch(0.86 0.15 85);
+  --steam: oklch(0.72 0.17 290);
+  --red: oklch(0.7 0.18 25);
+
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --maxw: 1180px;
+}
+
+/* fire-mode (konami) */
+body.fire{
+  --accent: oklch(0.82 0.18 55);
+  --accent-soft: oklch(0.82 0.18 55 / 0.14);
+  --accent-line: oklch(0.82 0.18 55 / 0.4);
+  --bg: #0d0805;
+  --bg-2: #120a06;
+  --panel: #170d08;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+a{ color: inherit; text-decoration: none; }
+button{ font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+::selection{ background: var(--accent-soft); color: var(--text); }
+
+/* ===================== AMBIENT ===================== */
+.ambient{
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 500px at 78% -10%, oklch(0.84 0.18 152 / 0.10), transparent 60%),
+    radial-gradient(700px 400px at 5% 30%, oklch(0.78 0.13 220 / 0.07), transparent 60%);
+}
+.scanlines{
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    rgba(255,255,255,0.018) 0,
+    rgba(255,255,255,0.018) 1px,
+    transparent 1px,
+    transparent 3px);
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+.vignette{
+  position: fixed; inset: 0; z-index: 998; pointer-events: none;
+  background: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 60%, rgba(0,0,0,0.55) 100%);
+}
+.grid-bg{
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(230,237,243,0.04) 1px, transparent 0);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 40%, transparent 100%);
+}
+
+/* ===================== BOOT OVERLAY ===================== */
+#boot{
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 13px;
+  color: var(--text-2);
+  transition: opacity .5s ease;
+}
+#boot .boot-inner{
+  width: min(720px, 90vw);
+  padding: 24px 28px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.02);
+  white-space: pre-wrap;
+}
+#boot .ok{ color: var(--accent); }
+#boot .warn{ color: var(--gold); }
+#boot .dim{ color: var(--dim); }
+#boot .cur::after{
+  content: "▍"; color: var(--accent); animation: blink 1s steps(2) infinite; margin-left: 2px;
+}
+#boot .skip{
+  margin-top: 14px; font-size: 11px; color: var(--dim);
+}
+@keyframes blink{ 50%{ opacity: 0; } }
+body.booted #boot{ opacity: 0; pointer-events: none; }
+
+/* ===================== LAYOUT ===================== */
+.wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 28px; position: relative; z-index: 2; }
+section{ position: relative; z-index: 1; padding: 100px 0 60px; }
+@media (max-width: 720px){ section{ padding: 80px 0 50px; } }
+
+/* ===================== TOP BAR (faux OS) ===================== */
+.osbar{
+  position: sticky; top: 0; z-index: 60;
+  backdrop-filter: blur(10px);
+  background: rgba(7,9,13,0.78);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.osbar-inner{
+  max-width: var(--maxw); margin: 0 auto; padding: 8px 28px;
+  display: flex; align-items: center; gap: 24px;
+}
+.os-brand{
+  display: inline-flex; align-items: center; gap: 8px; color: var(--text);
+  font-weight: 700;
+}
+.os-brand .led{
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.55;} }
+.os-menu{ display: flex; gap: 18px; color: var(--muted); }
+.os-menu a{ transition: color .15s ease; }
+.os-menu a:hover{ color: var(--text); }
+.os-menu a.is-active{ color: var(--accent); }
+.os-tray{ margin-left: auto; display: flex; align-items: center; gap: 16px; color: var(--muted); }
+.os-tray .pill{
+  padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--accent-line); color: var(--accent);
+  background: var(--accent-soft);
+}
+@media (max-width: 820px){ .os-menu{ display: none; } .os-tray .hide-mob{ display: none; } }
+
+/* ===================== HERO / TERMINAL WINDOW ===================== */
+.hero{ padding: 60px 0 60px; }
+.hero-grid{
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 980px){ .hero-grid{ grid-template-columns: 1fr; } }
+
+.hero-left h1{
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(40px, 6.5vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  margin: 24px 0 18px;
+  text-wrap: balance;
+}
+.hero-left h1 .accent{ color: var(--accent); }
+.kicker{
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  border: 1px solid var(--line); background: var(--panel);
+  padding: 6px 12px; border-radius: 999px;
+}
+.kicker b{ color: var(--text); font-weight: 500; }
+.kicker .led{ width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.tagline{
+  font-size: clamp(17px, 2vw, 20px);
+  color: var(--text-2);
+  max-width: 520px;
+  margin: 0 0 14px;
+  text-wrap: pretty;
+}
+.sub-stamp{
+  font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+  margin-bottom: 28px;
+}
+.sub-stamp .sep{ color: var(--dim); margin: 0 8px; }
+.cta-row{ display: flex; gap: 12px; flex-wrap: wrap; }
+.btn{
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 18px; border-radius: 8px;
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  border: 1px solid var(--line-2);
+  transition: transform .12s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn:hover{ transform: translateY(-1px); }
+.btn-primary{ background: var(--accent); color: #07120c; border-color: var(--accent); }
+.btn-primary:hover{ filter: brightness(1.08); }
+.btn-ghost{ background: var(--panel); color: var(--text); }
+.btn-ghost:hover{ border-color: var(--accent-line); color: var(--accent); }
+.btn .arrow{ transition: transform .15s ease; }
+.btn:hover .arrow{ transform: translateX(3px); }
+
+/* the terminal window */
+.term{
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0c1220 0%, #0a0f1a 100%);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 0 60px oklch(0.84 0.18 152 / 0.06) inset;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-2);
+  overflow: hidden;
+  user-select: text;
+}
+.term-bar{
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: grab;
+}
+.term-bar:active{ cursor: grabbing; }
+.term-bar .lights{ display: flex; gap: 6px; }
+.term-bar .lights span{ width: 11px; height: 11px; border-radius: 50%; }
+.term-bar .lights span:nth-child(1){ background: var(--red); }
+.term-bar .lights span:nth-child(2){ background: var(--gold); }
+.term-bar .lights span:nth-child(3){ background: var(--accent); }
+.term-bar .title{ margin-left: 6px; }
+.term-bar .right{ margin-left: auto; color: var(--dim); font-size: 11px; }
+.term-body{
+  padding: 16px 18px 18px;
+  min-height: 360px;
+  max-height: 480px;
+  overflow-y: auto;
+  line-height: 1.65;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+.term-body::-webkit-scrollbar{ width: 8px; }
+.term-body::-webkit-scrollbar-thumb{ background: var(--line-2); border-radius: 4px; }
+.term-line{ white-space: normal; word-break: break-word; }
+.term-prompt{ color: var(--accent); }
+.term-prompt .user{ color: var(--accent); }
+.term-prompt .at{ color: var(--muted); }
+.term-prompt .host{ color: var(--cyan); }
+.term-prompt .path{ color: var(--magenta); }
+.term-prompt .arrow{ color: var(--text); margin: 0 6px; }
+.term-cmd{ color: var(--text); }
+.term-out{ color: var(--text-2); }
+.term-out .k{ color: var(--accent); }
+.term-out .v{ color: var(--text); }
+.term-out .dim{ color: var(--dim); }
+.term-out .ok{ color: var(--accent); }
+.term-out .warn{ color: var(--gold); }
+.term-out .err{ color: var(--red); }
+.term-out a{ color: var(--cyan); text-decoration: underline dotted; text-underline-offset: 3px; }
+.term-input-row{
+  display: flex; align-items: baseline; gap: 8px;
+  margin-top: 4px;
+}
+.term-input-row input{
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--accent);
+}
+.term-hint{
+  font-size: 11px; color: var(--dim);
+  border-top: 1px dashed var(--line-2);
+  padding: 8px 14px;
+}
+.term-hint kbd{
+  font-family: var(--mono); font-size: 10.5px;
+  padding: 1px 6px; border-radius: 4px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--text-2);
+}
+
+/* hero bottom strip */
+.hero-strip{
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  font-family: var(--mono);
+  overflow: hidden;
+}
+.hero-strip > div{
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+}
+.hero-strip > div:last-child{ border-right: 0; }
+.hero-strip .k{ font-size: 10.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.hero-strip .v{ font-size: 13px; color: var(--text); }
+.hero-strip .dot{ color: var(--accent); margin-right: 5px; }
+@media (max-width: 720px){
+  .hero-strip{ grid-template-columns: 1fr 1fr; }
+  .hero-strip > div{ border-right: 0; border-bottom: 1px solid var(--line); }
+  .hero-strip > div:nth-last-child(-n+2){ border-bottom: 0; }
+  .hero-strip > div:nth-child(odd){ border-right: 1px solid var(--line); }
+}
+
+/* ===================== NOW WIDGET (floating) ===================== */
+.now-widget{
+  position: fixed; right: 18px; bottom: 70px; z-index: 50;
+  width: 240px;
+  border: 1px solid var(--line);
+  background: rgba(14,19,28,0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  font-family: var(--mono); font-size: 11.5px;
+  padding: 12px 14px;
+  color: var(--text-2);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  transition: transform .25s ease, opacity .25s ease;
+}
+.now-widget.hidden{ transform: translateY(20px); opacity: 0; pointer-events: none; }
+.now-widget .head{
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.now-widget .head .title{ color: var(--text); font-weight: 600; }
+.now-widget .head .x{ color: var(--dim); cursor: pointer; }
+.now-widget .head .x:hover{ color: var(--text); }
+.now-widget .row{ margin-bottom: 6px; line-height: 1.45; }
+.now-widget .row:last-child{ margin-bottom: 0; }
+.now-widget .row .lbl{ color: var(--accent); display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; }
+.now-widget .row .val{ color: var(--text); }
+.now-widget .live{
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  margin-right: 6px; vertical-align: middle;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@media (max-width: 720px){ .now-widget{ display: none; } }
+
+/* ===================== SECTION HEADS ===================== */
+.sec-head{ margin-bottom: 36px; }
+.sec-eyebrow{
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-eyebrow .num{ color: var(--dim); }
+.sec-eyebrow::after{
+  content:""; flex: 1; height: 1px; background: var(--line); margin-left: 10px;
+}
+.sec-title{
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.sec-sub{ color: var(--muted); max-width: 640px; font-size: 15.5px; }
+
+/* ===================== ABOUT ===================== */
+.about-grid{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 900px){ .about-grid{ grid-template-columns: 1fr; } }
+.prose p{ font-size: 16.5px; color: var(--text-2); margin: 0 0 16px; text-wrap: pretty; }
+.prose p strong{ color: var(--text); font-weight: 600; }
+.prose p .hl{ color: var(--accent); }
+
+.cat-card{
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+.cat-card .head{
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.cat-card .head .lights{ display: flex; gap: 6px; }
+.cat-card .head .lights span{ width: 9px; height: 9px; border-radius: 50%; }
+.cat-card .head .lights span:nth-child(1){ background: var(--red); }
+.cat-card .head .lights span:nth-child(2){ background: var(--gold); }
+.cat-card .head .lights span:nth-child(3){ background: var(--accent); }
+.cat-card .body{ padding: 16px; line-height: 1.65; }
+.cat-card .key{ color: var(--accent); }
+.cat-card .com{ color: var(--dim); }
+.cat-card .v{ color: var(--text-2); }
+.cat-card .ok{ color: var(--accent); }
+
+/* ===================== SKILLS / NMAP ===================== */
+.nmap{
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  overflow: hidden;
+}
+.nmap .head{
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.nmap .head .lights{ display: flex; gap: 6px; }
+.nmap .head .lights span{ width: 9px; height: 9px; border-radius: 50%; }
+.nmap .head .lights span:nth-child(1){ background: var(--red); }
+.nmap .head .lights span:nth-child(2){ background: var(--gold); }
+.nmap .head .lights span:nth-child(3){ background: var(--accent); }
+.nmap .head .title{ color: var(--text); }
+.nmap .body{ padding: 18px 18px; line-height: 1.7; }
+.nmap .cmd{ color: var(--text); margin-bottom: 6px; }
+.nmap .cmd .p{ color: var(--accent); }
+.nmap .meta{ color: var(--dim); margin-bottom: 14px; }
+.nmap .row{
+  display: grid;
+  grid-template-columns: 90px 90px 1fr;
+  gap: 14px;
+  padding: 4px 0;
+  align-items: baseline;
+}
+.nmap .row.headers{ color: var(--dim); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 8px; border-bottom: 1px dashed var(--line-2); margin-bottom: 6px; }
+.nmap .port{ color: var(--cyan); }
+.nmap .state{ color: var(--accent); }
+.nmap .svc{ color: var(--text-2); }
+.nmap .svc .tags{ display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; vertical-align: middle; }
+.nmap .svc .tag{
+  font-size: 11px; padding: 2px 7px; border-radius: 4px;
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--muted);
+}
+.nmap .footer-line{ margin-top: 14px; color: var(--dim); border-top: 1px dashed var(--line-2); padding-top: 12px; }
+@media (max-width: 700px){
+  .nmap .row{ grid-template-columns: 80px 70px 1fr; gap: 8px; font-size: 12px; }
+}
+
+/* ===================== TIMELINE / GIT LOG ===================== */
+.git-toolbar{
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 18px;
+  font-family: var(--mono); font-size: 12px;
+}
+.git-toolbar button{
+  padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted);
+  background: var(--panel);
+}
+.git-toolbar button:hover{ color: var(--text); }
+.git-toolbar button.is-active{ color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.git-toolbar .count{ color: var(--dim); margin-left: 5px; }
+.git-toolbar button.is-active .count{ color: var(--accent); }
+
+.gitlog{
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 10px;
+  font-family: var(--mono); font-size: 13px;
+  overflow: hidden;
+}
+.gitlog .head{
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.gitlog .head .lights{ display: flex; gap: 6px; }
+.gitlog .head .lights span{ width: 9px; height: 9px; border-radius: 50%; }
+.gitlog .head .lights span:nth-child(1){ background: var(--red); }
+.gitlog .head .lights span:nth-child(2){ background: var(--gold); }
+.gitlog .head .lights span:nth-child(3){ background: var(--accent); }
+.gitlog .body{ padding: 18px 22px 22px; line-height: 1.7; }
+
+.commit{
+  display: grid;
+  grid-template-columns: 18px 80px 160px 1fr 110px;
+  gap: 14px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line-2);
+  align-items: baseline;
+}
+.commit:first-of-type{ border-top: 0; }
+.commit .glyph{ color: var(--accent); font-weight: 700; }
+.commit .hash{ color: var(--gold); }
+.commit .branch{
+  font-size: 11px;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--cyan);
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  justify-self: start;
+}
+.commit .branch.security{ color: oklch(0.72 0.16 25); }
+.commit .branch.cloud{ color: var(--accent); }
+.commit .branch.ai{ color: var(--magenta); }
+.commit .branch.intl{ color: var(--gold); }
+.commit .branch.team{ color: var(--steam); }
+.commit .msg{ color: var(--text); }
+.commit .msg .who{ color: var(--accent); margin-right: 6px; }
+.commit .date{ color: var(--dim); text-align: right; font-size: 12px; }
+.commit.feature{ background: rgba(255,255,255,0.015); border-radius: 6px; padding: 12px; }
+.commit.feature .msg .extra{
+  display: block;
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--accent);
+  background: var(--bg-2);
+  border-radius: 0 6px 6px 0;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+@media (max-width: 820px){
+  .commit{ grid-template-columns: 14px 60px 1fr; gap: 10px; }
+  .commit .branch{ display: none; }
+  .commit .date{ display: none; }
+}
+
+/* ===================== PROJECTS / TOP ===================== */
+.top-shell{
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 10px;
+  font-family: var(--mono);
+  overflow: hidden;
+}
+.top-shell .head{
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12.5px;
+  display: flex; align-items: center; gap: 10px;
+}
+.top-shell .head .lights{ display: flex; gap: 6px; }
+.top-shell .head .lights span{ width: 9px; height: 9px; border-radius: 50%; }
+.top-shell .head .lights span:nth-child(1){ background: var(--red); }
+.top-shell .head .lights span:nth-child(2){ background: var(--gold); }
+.top-shell .head .lights span:nth-child(3){ background: var(--accent); }
+.top-shell .stats{
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  display: flex; gap: 22px; flex-wrap: wrap;
+}
+.top-shell .stats span b{ color: var(--text); font-weight: 500; }
+.top-shell .stats .ok{ color: var(--accent); }
+.top-shell .table{ font-size: 13px; }
+.proc{
+  display: grid;
+  grid-template-columns: 70px 70px 90px 1fr 130px;
+  gap: 14px;
+  padding: 16px 18px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  transition: background .15s ease;
+  cursor: default;
+}
+.proc:hover{ background: rgba(255,255,255,0.02); }
+.proc.headers{
+  border-top: 0;
+  padding: 10px 18px;
+  background: var(--bg-2);
+  color: var(--dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.proc .pid{ color: var(--gold); }
+.proc .cpu{ color: var(--accent); }
+.proc .mem{ color: var(--cyan); }
+.proc .name{ color: var(--text); }
+.proc .name .desc{
+  display: block;
+  color: var(--text-2);
+  font-family: var(--sans);
+  font-size: 14px;
+  margin-top: 6px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.proc .name .desc em{
+  color: var(--accent);
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.proc .name .badge{
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 7px; border-radius: 999px;
+  background: oklch(0.86 0.15 85 / 0.14);
+  color: var(--gold);
+  border: 1px solid oklch(0.86 0.15 85 / 0.4);
+  vertical-align: middle;
+}
+.proc .name .stack{
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;
+}
+.proc .name .stack .tag{
+  font-size: 11px; padding: 3px 8px; border-radius: 4px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--muted);
+}
+.proc .name .stack .tag.accent{ color: var(--accent); border-color: var(--accent-line); }
+.proc .action a{
+  font-family: var(--mono); font-size: 12px;
+  color: var(--accent);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 6px;
+  border: 1px solid var(--accent-line); background: var(--accent-soft);
+  transition: filter .15s ease;
+}
+.proc .action a:hover{ filter: brightness(1.15); }
+.proc .action a.disabled{
+  color: var(--muted); border-color: var(--line); background: var(--bg-2);
+  pointer-events: none;
+}
+@media (max-width: 820px){
+  .proc{ grid-template-columns: 60px 60px 1fr; gap: 8px; }
+  .proc .mem, .proc.headers .mem{ display: none; }
+  .proc .action{ grid-column: 1 / -1; }
+  .proc.headers .action{ display: none; }
+}
+
+/* ===================== STEAM MODS (compact) ===================== */
+.steam-card{
+  position: relative;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(700px 280px at 90% 0%, oklch(0.72 0.17 290 / 0.18), transparent 60%),
+    var(--panel);
+  border-radius: 12px;
+  padding: 28px 32px 30px;
+  overflow: hidden;
+}
+.steam-card::before{
+  content: "";
+  position: absolute; right: -50px; top: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: oklch(0.72 0.17 290 / 0.12);
+  filter: blur(40px);
+  pointer-events: none;
+}
+.steam-card .eyebrow{
+  font-family: var(--mono); font-size: 12px;
+  color: var(--steam);
+  margin-bottom: 10px;
+}
+.steam-card h3{
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-wrap: balance;
+}
+.steam-card p{
+  color: var(--text-2);
+  max-width: 620px;
+  margin: 0 0 20px;
+  font-size: 15.5px;
+  text-wrap: pretty;
+}
+.steam-card .cadence{
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  border: 1px dashed var(--line-2);
+  padding: 6px 12px; border-radius: 999px;
+  margin-bottom: 18px;
+}
+.steam-card .cadence b{ color: var(--steam); font-weight: 500; }
+.steam-card .actions{ display: flex; gap: 10px; flex-wrap: wrap; }
+.steam-card .btn-steam{
+  background: var(--steam);
+  color: #0d0418;
+  border-color: var(--steam);
+  font-family: var(--mono); font-weight: 600;
+  padding: 12px 18px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 10px;
+  transition: filter .15s ease;
+  border: 1px solid var(--steam);
+}
+.steam-card .btn-steam:hover{ filter: brightness(1.1); }
+.steam-card .btn-yt{
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  font-family: var(--mono);
+  padding: 12px 18px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.steam-card .btn-yt:hover{ border-color: var(--steam); color: var(--steam); }
+.steam-card .ticker{
+  margin-top: 22px; padding-top: 18px;
+  border-top: 1px dashed var(--line-2);
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.steam-card .ticker .label{ color: var(--steam); }
+.steam-card .ticker .item{
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--text-2);
+}
+
+/* ===================== X-FACTOR ===================== */
+.xfactor{
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 32px;
+  background:
+    radial-gradient(500px 250px at 100% 0%, var(--accent-soft), transparent 60%),
+    radial-gradient(500px 250px at 0% 100%, oklch(0.78 0.13 220 / 0.14), transparent 60%),
+    var(--panel);
+  position: relative; overflow: hidden;
+}
+.xf-quote{ font-family: var(--mono); font-size: 12.5px; color: var(--accent); margin-bottom: 16px; }
+.xf-grid{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 36px; }
+@media (max-width: 720px){ .xf-grid{ grid-template-columns: 1fr; } }
+.xf-item .label{
+  font-family: var(--mono); font-size: 11.5px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;
+}
+.xf-item p{ color: var(--text-2); font-size: 15px; line-height: 1.6; margin: 0; }
+
+/* ===================== CONTACT ===================== */
+.contact-card{
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 32px;
+  font-family: var(--mono);
+}
+.contact-card h3{
+  font-family: var(--sans);
+  font-size: 26px; font-weight: 600; margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.contact-card .sub{ color: var(--muted); font-family: var(--sans); margin: 0 0 24px; font-size: 15px; }
+.email-row{ display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.email-display{
+  flex: 1; min-width: 240px;
+  font-size: 14px;
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.email-display .at{ color: var(--accent); }
+.copy-btn{
+  padding: 0 16px;
+  background: var(--accent); color: #07120c;
+  border-radius: 8px;
+  font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: filter .15s ease;
+  border: 1px solid var(--accent);
+}
+.copy-btn:hover{ filter: brightness(1.08); }
+.copy-btn.copied{ background: var(--cyan); border-color: var(--cyan); color: #06121b; }
+.links-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 760px){ .links-grid{ grid-template-columns: 1fr 1fr; } }
+.link-card{
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  border-radius: 8px;
+  padding: 14px;
+  transition: border-color .15s ease, transform .12s ease;
+}
+.link-card:hover{ border-color: var(--accent-line); transform: translateY(-2px); }
+.link-card .lk{ font-size: 10.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.link-card .lh{ font-size: 13px; color: var(--text); display: flex; align-items: center; justify-content: space-between; }
+.link-card .lh .arr{ color: var(--muted); transition: color .15s ease, transform .15s ease; }
+.link-card:hover .lh .arr{ color: var(--accent); transform: translate(2px,-2px); }
+
+/* ===================== HTOP FOOTER ===================== */
+footer.htop{
+  border-top: 1px solid var(--line);
+  padding: 24px 0 28px;
+  margin-top: 60px;
+  background: var(--bg-2);
+  position: relative; z-index: 1;
+}
+.htop-inner{
+  max-width: var(--maxw); margin: 0 auto; padding: 0 28px;
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+}
+.htop-bar{
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.htop-bar .lbl{ color: var(--accent); }
+.htop-bar .meter{
+  height: 12px; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 3px; overflow: hidden; position: relative;
+}
+.htop-bar .meter .fill{ height: 100%; background: var(--accent); }
+.htop-bar .meter .fill.cy{ background: var(--cyan); }
+.htop-bar .meter .fill.go{ background: var(--gold); }
+.htop-bar .meter .lbl-in{
+  position: absolute; right: 6px; top: 0; bottom: 0;
+  display: flex; align-items: center;
+  font-size: 10.5px; color: var(--text);
+}
+.htop-foot{
+  margin-top: 14px;
+  display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  border-top: 1px dashed var(--line-2);
+  padding-top: 12px;
+  color: var(--dim);
+}
+.htop-foot .end{ color: var(--accent); }
+
+/* ===================== REVEAL ===================== */
+.reveal{ opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.in{ opacity: 1; transform: none; }
+
+/* ===================== CURSOR TRAIL DOTS ===================== */
+.trail-dot{
+  position: fixed; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  pointer-events: none; z-index: 998;
+  transition: opacity .8s ease, transform .8s ease;
+}
+</style>
+</head>
+<body>
+
+<!-- ============== BOOT OVERLAY ============== -->
+<div id="boot" role="status" aria-live="polite">
+  <div class="boot-inner">
+<span class="dim">[BIOS] ian-os v2.6 · </span><span class="ok">PXL Hogeschool</span><span class="dim"> · 2025-2026</span>
+<br><br>
+<span id="boot-text"></span><span class="cur"></span>
+<div class="skip">[ tap anywhere or press any key to skip ]</div>
+  </div>
+</div>
+
+<div class="ambient"></div>
+<div class="grid-bg"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<!-- ============== OS BAR ============== -->
+<nav class="osbar" id="osbar">
+  <div class="osbar-inner">
+    <a href="#top" class="os-brand"><span class="led"></span> ian-os</a>
+    <div class="os-menu" id="os-menu">
+      <a href="#about">about</a>
+      <a href="#skills">skills</a>
+      <a href="#timeline">log</a>
+      <a href="#projects">processes</a>
+      <a href="#mods">mods</a>
+      <a href="#xfactor">x-factor</a>
+      <a href="#contact">contact</a>
+    </div>
+    <div class="os-tray">
+      <span class="hide-mob"><span class="pill">● online</span></span>
+      <span class="hide-mob" id="cpu-tray">cpu 0%</span>
+      <span id="clock">--:--</span>
+    </div>
+  </div>
+</nav>
+
+<a id="top"></a>
+
+<!-- ============== HERO ============== -->
+<section class="hero wrap">
+  <div class="hero-grid">
+
+    <div class="hero-left">
+      <div class="kicker reveal">
+        <span class="led"></span>
+        <span><b>graduate roles · 2026</b> &nbsp;·&nbsp; cloud / devops / security</span>
+      </div>
+
+      <h1 class="reveal">
+        I make <span class="accent">cloud things</span><br>
+        and the occasional <span class="accent">chaos.</span>
+      </h1>
+
+      <p class="tagline reveal">
+        Hi, I'm Ian &mdash; alias <em style="font-style:normal;color:var(--accent);font-family:var(--mono);font-size:0.95em;">nucleargoomba</em>.
+        IT student at PXL, currently shipping security services on internship at
+        Open Line, and writing Lua mods after dinner.
+      </p>
+      <p class="sub-stamp reveal">
+        Hasselt, BE
+        <span class="sep">·</span> graduating 2026 (no retakes)
+        <span class="sep">·</span> open to junior cloud / devops roles
+      </p>
+
+      <div class="cta-row reveal">
+        <a class="btn btn-primary" href="#projects">view processes <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="#contact">open mailto: <span class="arrow">→</span></a>
+      </div>
+
+      <div class="hero-strip reveal">
+        <div><div class="k">status</div><div class="v"><span class="dot">●</span>on internship</div></div>
+        <div><div class="k">location</div><div class="v">Hasselt, BE</div></div>
+        <div><div class="k">focus</div><div class="v">Cloud / DevOps</div></div>
+        <div><div class="k">jam result</div><div class="v">3rd place 🏆</div></div>
+      </div>
+    </div>
+
+    <!-- Interactive terminal -->
+    <div class="term reveal" id="term">
+      <div class="term-bar" id="term-bar">
+        <div class="lights"><span></span><span></span><span></span></div>
+        <div class="title">— ian@portfolio: ~</div>
+        <div class="right">zsh · 80×24</div>
+      </div>
+      <div class="term-body" id="term-body"><div class="term-line"><span class="term-prompt"><span class="user">ian</span><span class="at">@</span><span class="host">portfolio</span><span class="arrow">:</span><span class="path">~</span><span class="arrow">$</span></span> <span class="term-cmd">whoami</span></div><div class="term-line term-out">ian terryn (alias: <span class="ok">nucleargoomba</span>) — IT student @ PXL Hogeschool, on internship at <span class="v">Open Line</span> (NL).</div><div class="term-line">&nbsp;</div><div class="term-line"><span class="term-prompt"><span class="user">ian</span><span class="at">@</span><span class="host">portfolio</span><span class="arrow">:</span><span class="path">~</span><span class="arrow">$</span></span> <span class="term-cmd">help</span></div><div class="term-line term-out"><span class="dim">// available:</span> <span class="ok">whoami</span> <span class="ok">about</span> <span class="ok">skills</span> <span class="ok">projects</span> <span class="ok">mods</span> <span class="ok">contact</span> <span class="ok">jam</span> <span class="ok">sudo</span> <span class="ok">clear</span> <span class="ok">help</span></div></div>
+      <div class="term-input-row" style="padding: 0 18px 14px;">
+        <span class="term-prompt"><span class="user">ian</span><span class="at">@</span><span class="host">portfolio</span><span class="arrow">:</span><span class="path">~</span><span class="arrow">$</span></span>
+        <input id="term-input" autocomplete="off" spellcheck="false" placeholder="try: skills" />
+      </div>
+      <div class="term-hint">
+        <kbd>↑</kbd>/<kbd>↓</kbd> history · <kbd>tab</kbd> autocomplete · try <kbd>sudo make-coffee</kbd>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ABOUT ============== -->
+<section id="about" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">01</span> &gt; cat about.md</div>
+    <h2 class="sec-title">Hasselt-based, cloud-curious, slightly addicted to learning new stacks.</h2>
+  </div>
+
+  <div class="about-grid">
+    <div class="prose reveal">
+      <p>
+        I'm finishing my three-year Applied Informatics degree at <strong>PXL Hogeschool</strong>
+        <span class="hl">without retakes</span>. I gravitate toward
+        <strong>cloud development, AI automation, and infrastructure-as-code</strong>,
+        and on the side I tinker with games, mods, and an unreasonable interest in cars.
+      </p>
+      <p>
+        My superpower is <strong>picking up new technologies fast and applying them
+        immediately</strong>. From "never opened Godot" to a podium at the UHasselt Game
+        Jam in 72 hours; from "what is REPENTOGON" to shipping mods on a weekly cadence;
+        from Python basics to building production security services on internship.
+      </p>
+      <p>
+        I'm currently interning at <strong>Open Line</strong> in the Netherlands &mdash; building
+        security services and, on my own initiative, setting up a cross-branch
+        <strong>Teams communication channel</strong> with direct lines to head projects,
+        head security, sales, and the SOC team.
+      </p>
+      <p>
+        Next stop: the <span class="hl">Open Line masterclass track</span> &mdash;
+        junior 4 days a week, 1 day for certifications &mdash; aiming for
+        <strong>DevOps / Cloud Engineer</strong> at a growth-oriented company.
+      </p>
+    </div>
+
+    <aside class="cat-card reveal">
+      <div class="head">
+        <div class="lights"><span></span><span></span><span></span></div>
+        <div>~/etc/ian.conf</div>
+      </div>
+      <div class="body">
+<span class="com"># identity</span>
+<br><span class="key">name</span>          = <span class="v">"Ian Terryn"</span>
+<br><span class="key">alias</span>         = <span class="v">"nucleargoomba"</span>
+<br><span class="key">based_in</span>      = <span class="v">"Hasselt, BE"</span>
+<br><br><span class="com"># education</span>
+<br><span class="key">school</span>        = <span class="v">"PXL Hogeschool"</span>
+<br><span class="key">graduating</span>    = <span class="v">2026</span>  <span class="ok">// no retakes</span>
+<br><br><span class="com"># work</span>
+<br><span class="key">internship</span>    = <span class="v">"Open Line · NL"</span>
+<br><span class="key">stretch_goal</span>  = <span class="v">"masterclass track"</span>
+<br><span class="key">status</span>        = <span class="ok">"hiring window open"</span>
+<br><br><span class="com"># interests</span>
+<br><span class="key">stacks</span>        = [<span class="v">"cloud","ai","iac"</span>]
+<br><span class="key">hobbies</span>       = [<span class="v">"gaming","modding","cars"</span>]
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============== SKILLS / NMAP ============== -->
+<section id="skills" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">02</span> &gt; nmap -sV ian.skills</div>
+    <h2 class="sec-title">Ports open. Services running. Try probing one.</h2>
+  </div>
+
+  <div class="nmap reveal">
+    <div class="head">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <div class="title">$ nmap -sV ian.skills</div>
+    </div>
+    <div class="body">
+      <div class="cmd"><span class="p">$</span> nmap -sV --top-ports 20 ian.skills</div>
+      <div class="meta">Starting Nmap 7.94 ( https://nmap.org ) · Scan report for ian.skills (127.0.0.1)</div>
+
+      <div class="row headers">
+        <div>port</div><div>state</div><div>service / tags</div>
+      </div>
+
+      <div class="row">
+        <div class="port">443/tcp</div>
+        <div class="state">open</div>
+        <div class="svc"><b style="color:var(--text);">cloud</b> <span class="tags"><span class="tag">azure-networking</span><span class="tag">multi-cloud</span><span class="tag">iac</span><span class="tag">datacenter-ops</span></span></div>
+      </div>
+      <div class="row">
+        <div class="port">22/tcp</div>
+        <div class="state">open</div>
+        <div class="svc"><b style="color:var(--text);">security</b> <span class="tags"><span class="tag">pentesting</span><span class="tag">secure-sd-wan</span><span class="tag">identity</span><span class="tag">ethical-hacking</span></span></div>
+      </div>
+      <div class="row">
+        <div class="port">8080/tcp</div>
+        <div class="state">open</div>
+        <div class="svc"><b style="color:var(--text);">development</b> <span class="tags"><span class="tag">python</span><span class="tag">docker</span><span class="tag">gdscript</span><span class="tag">lua</span><span class="tag">webscraping</span></span></div>
+      </div>
+      <div class="row">
+        <div class="port">9000/tcp</div>
+        <div class="state">open</div>
+        <div class="svc"><b style="color:var(--text);">soft-skills</b> <span class="tags"><span class="tag">fast-learner</span><span class="tag">team-lead</span><span class="tag">assertiveness</span><span class="tag">en-fluent</span></span></div>
+      </div>
+      <div class="row">
+        <div class="port">25565/tcp</div>
+        <div class="state" style="color:var(--gold);">filtered</div>
+        <div class="svc"><b style="color:var(--text);">side-quests</b> <span class="tags"><span class="tag">godot</span><span class="tag">repentogon</span><span class="tag">beepbox-music</span><span class="tag">homelab</span></span></div>
+      </div>
+
+      <div class="footer-line">Nmap done: 1 IP scanned · 5 services up · 0 honeypots · finished in 0.04s</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TIMELINE / GIT LOG ============== -->
+<section id="timeline" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">03</span> &gt; git log --oneline --all</div>
+    <h2 class="sec-title">A year in commits: seminars, hackathons, Cardiff &amp; the spider-web.</h2>
+  </div>
+
+  <div class="git-toolbar reveal">
+    <button class="is-active" data-filter="all">all <span class="count">/16</span></button>
+    <button data-filter="cloud">cloud <span class="count">/3</span></button>
+    <button data-filter="security">security <span class="count">/6</span></button>
+    <button data-filter="ai">ai <span class="count">/2</span></button>
+    <button data-filter="intl">intl <span class="count">/1</span></button>
+    <button data-filter="team">team <span class="count">/4</span></button>
+  </div>
+
+  <div class="gitlog reveal">
+    <div class="head">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <div>~/portfolio · git log --graph --pretty=oneline</div>
+    </div>
+    <div class="body" id="gitlog-body">
+      <div class="commit feature" data-cat="team">
+        <div class="glyph">★</div>
+        <div class="hash">f1c01d</div>
+        <div class="branch team">team/MCP</div>
+        <div class="msg">
+          <span class="who">ian:</span> POPping &amp; "My Team and I" — survived the spider-web, beat the numbered plank
+          <span class="extra">
+            On the team-building course we had to cross a spider-web obstacle &mdash; I lifted teammates through the gaps.
+            Then a numbered-plank construction puzzle stumped us first try; we cracked it on the second attempt by reorganising the order
+            and trusting one person to call the moves. Lencioni in practice: trust → conflict → commitment.
+            Team name: <em style="font-style:normal;color:var(--accent);">MCP</em>.
+          </span>
+        </div>
+        <div class="date">16 Oct 2025</div>
+      </div>
+
+      <div class="commit" data-cat="intl">
+        <div class="glyph">↗</div>
+        <div class="hash">c4dff0</div>
+        <div class="branch intl">intl/cardiff</div>
+        <div class="msg"><span class="who">ian:</span> Bus-IT Week Cardiff · led team, built wheelchair-accessibility app concept (Waze-but-for-physical-accessibility) — added myself to the trip via cold email.</div>
+        <div class="date">07–11 Apr 2025</div>
+      </div>
+
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">a93e21</div>
+        <div class="branch security">sec/forensics</div>
+        <div class="msg"><span class="who">politie:</span> Digital forensics walkthrough.</div>
+        <div class="date">17 Dec 2025</div>
+      </div>
+      <div class="commit" data-cat="cloud">
+        <div class="glyph">+</div>
+        <div class="hash">61b8d4</div>
+        <div class="branch cloud">cloud/datacenter</div>
+        <div class="msg"><span class="who">cegeka:</span> Datacenter visit — saw what "the cloud" actually looks like.</div>
+        <div class="date">10 Dec 2025</div>
+      </div>
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">7a2c0e</div>
+        <div class="branch security">sec/ethical-hack</div>
+        <div class="msg"><span class="who">equans:</span> Ethical hacking + labs.</div>
+        <div class="date">26 Nov 2025</div>
+      </div>
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">38f1a2</div>
+        <div class="branch security">sec/identity</div>
+        <div class="msg"><span class="who">secwise:</span> Identity cybersecurity.</div>
+        <div class="date">12 Nov 2025</div>
+      </div>
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">0e9b73</div>
+        <div class="branch security">sec/pentest</div>
+        <div class="msg"><span class="who">brightest:</span> Intro to pentesting.</div>
+        <div class="date">05 Nov 2025</div>
+      </div>
+      <div class="commit" data-cat="ai">
+        <div class="glyph">★</div>
+        <div class="hash">4c01b8</div>
+        <div class="branch ai">ai/hackathon</div>
+        <div class="msg"><span class="who">smart-ict:</span> Hackathon · AI text-improvement tool for users with reading/writing conditions (16h).</div>
+        <div class="date">2 days · 16 h</div>
+      </div>
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">d77a45</div>
+        <div class="branch security">sec/deepdive</div>
+        <div class="msg"><span class="who">resilix:</span> Security deep-dive (8h).</div>
+        <div class="date">09 Oct 2025</div>
+      </div>
+      <div class="commit" data-cat="security">
+        <div class="glyph">+</div>
+        <div class="hash">b22f01</div>
+        <div class="branch security">sec/sd-wan</div>
+        <div class="msg"><span class="who">exclusive-networks:</span> Secure SD-WANs (7h).</div>
+        <div class="date">02 Oct 2025</div>
+      </div>
+      <div class="commit" data-cat="ai">
+        <div class="glyph">+</div>
+        <div class="hash">1f9e30</div>
+        <div class="branch ai">ai/practice</div>
+        <div class="msg"><span class="who">vanroey:</span> AI in practice.</div>
+        <div class="date">13 May 2025</div>
+      </div>
+      <div class="commit" data-cat="cloud">
+        <div class="glyph">+</div>
+        <div class="hash">9c3a17</div>
+        <div class="branch cloud">cloud/azure</div>
+        <div class="msg"><span class="who">cegeka:</span> Secure Azure networking.</div>
+        <div class="date">22 Apr 2025</div>
+      </div>
+      <div class="commit" data-cat="ai">
+        <div class="glyph">+</div>
+        <div class="hash">22e8b0</div>
+        <div class="branch ai">ai/llm</div>
+        <div class="msg"><span class="who">uncanny:</span> LLMs &amp; Stable Diffusion / ComfyUI.</div>
+        <div class="date">11 Mar 2025</div>
+      </div>
+      <div class="commit" data-cat="cloud">
+        <div class="glyph">+</div>
+        <div class="hash">de01a4</div>
+        <div class="branch cloud">cloud/multi</div>
+        <div class="msg"><span class="who">gluo:</span> Multi-Cloud in business.</div>
+        <div class="date">04 Mar 2025</div>
+      </div>
+      <div class="commit" data-cat="team">
+        <div class="glyph">+</div>
+        <div class="hash">5588e1</div>
+        <div class="branch team">team/popping</div>
+        <div class="msg"><span class="who">ian:</span> POP-sessie "POPping" — self-awareness &amp; peer feedback.</div>
+        <div class="date">25 Feb 2025</div>
+      </div>
+      <div class="commit" data-cat="team">
+        <div class="glyph">+</div>
+        <div class="hash">3a01b9</div>
+        <div class="branch team">team/brein</div>
+        <div class="msg"><span class="who">ian:</span> POP-sessie "Brein aan het werk" — navigating the digital world.</div>
+        <div class="date">11 Feb 2025</div>
+      </div>
+      <div class="commit" data-cat="team">
+        <div class="glyph">+</div>
+        <div class="hash">10000a</div>
+        <div class="branch team">team/projectweek</div>
+        <div class="msg"><span class="who">2tin:</span> Projectweek — networking, job fair, research pitches, 3rd-year demos.</div>
+        <div class="date">full week</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PROJECTS / TOP ============== -->
+<section id="projects" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">04</span> &gt; top -p ian.projects</div>
+    <h2 class="sec-title">Currently running processes.</h2>
+  </div>
+
+  <div class="top-shell reveal">
+    <div class="head">
+      <div class="lights"><span></span><span></span><span></span></div>
+      <div>$ top — by ian.terryn</div>
+    </div>
+    <div class="stats">
+      <span>tasks: <b>3</b> total · <span class="ok">3 running</span></span>
+      <span>%cpu: <b>91.3</b> us</span>
+      <span>%mem: <b>62.4</b></span>
+      <span>uptime: <b>3y</b></span>
+      <span>load avg: <b>0.79, 0.82, 0.74</b></span>
+    </div>
+    <div class="table">
+      <div class="proc headers">
+        <div>pid</div><div>%cpu</div><div>%mem</div><div>command</div><div>action</div>
+      </div>
+
+      <article class="proc">
+        <div class="pid">1337</div>
+        <div class="cpu">42.7</div>
+        <div class="mem">28.1</div>
+        <div class="name">
+          lessi-smore.godot
+          <span class="badge">🏆 3rd · jam</span>
+          <span class="desc">
+            Built in 72 hours with two friends in <em>Godot</em> &mdash; first time making a game.
+            Theme <em>"Less Is More"</em>: prep s'mores to keep your fire alive (gather marshmallows, wait
+            for chocolate, time the cookies; fight ants stealing your best smore + termites attacking
+            the fire). Days 1-2 I was on programming; day 3 I jumped into sound design &amp; music in
+            BeepBox &mdash; completely new territory. Podium finish at the UHasselt Student Game Jam 2.
+          </span>
+          <div class="stack">
+            <span class="tag accent">godot</span>
+            <span class="tag accent">gdscript</span>
+            <span class="tag">game-jam</span>
+            <span class="tag">sound-design</span>
+          </div>
+        </div>
+        <div class="action">
+          <a href="https://nucleargoomba.itch.io/lessi-smore" target="_blank" rel="noopener">play ↗</a>
+        </div>
+      </article>
+
+      <article class="proc">
+        <div class="pid">2042</div>
+        <div class="cpu">31.2</div>
+        <div class="mem">18.5</div>
+        <div class="name" style="grid-column: 4 / -1;">
+          homelab-scraper.py
+          <span class="desc">
+            A Python webscraper running in a Docker container on my homelab — quietly hunts deals and
+            bargains on a schedule and pings me when something good shows up. A small excuse to learn
+            Docker on real hardware that I actually own.
+          </span>
+          <div class="stack">
+            <span class="tag accent">python</span>
+            <span class="tag accent">docker</span>
+            <span class="tag">homelab</span>
+            <span class="tag">automation</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="proc">
+        <div class="pid">3141</div>
+        <div class="cpu">17.4</div>
+        <div class="mem">15.8</div>
+        <div class="name" style="grid-column: 4 / -1;">
+          mcp-chatbot.team
+          <span class="desc">
+            AI chatbot built for the IT-Project course on top of <em>Model Context Protocol</em>.
+            Team name: <em>Most Challenging Project (MCP)</em> &mdash; a wink at the tech we ran with.
+            A good exercise in agreeing on architecture before writing a single prompt.
+          </span>
+          <div class="stack">
+            <span class="tag accent">ai</span>
+            <span class="tag accent">mcp</span>
+            <span class="tag">teamwork</span>
+            <span class="tag">it-project</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============== STEAM MODS (compact) ============== -->
+<section id="mods" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow" style="color: var(--steam);"><span class="num">05</span> &gt; ./isaac-mods --watch</div>
+    <h2 class="sec-title">A new Lua mod every week. Roughly.</h2>
+  </div>
+
+  <div class="steam-card reveal">
+    <div class="eyebrow">// the binding of isaac: rebirth · repentogon</div>
+    <h3>One weird Lua experiment per week, give or take.</h3>
+    <p>
+      My after-hours playground. I write Lua mods on top of <strong style="color:var(--steam);">REPENTOGON</strong>
+      and ship them to the Workshop on a roughly weekly cadence — pick a rule the
+      game enforces, break it, see who subscribes. Past entries include a mod where
+      enemies copy your tear effects, one where items run away when you take damage,
+      and one where every enemy rotates around you like a Willow familiar.
+    </p>
+
+    <div class="cadence">
+      <span>📦</span> <b>release cadence:</b> ~1 mod / week &nbsp;·&nbsp; live on my Steam Workshop profile
+    </div>
+
+    <div class="actions">
+      <a class="btn-steam" href="https://steamcommunity.com/profiles/76561198350274866/myworkshopfiles/?appid=250900" target="_blank" rel="noopener">
+        browse all my mods on Steam Workshop <span>↗</span>
+      </a>
+    </div>
+
+    <div class="ticker">
+      <span class="label">// recent drops:</span>
+      <span class="item">enemies copy your tears</span>
+      <span class="item">items run away</span>
+      <span class="item">willo enemy AI</span>
+      <span class="item" style="border-color:var(--steam-line); color:var(--steam);">…and counting</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== X-FACTOR ============== -->
+<section id="xfactor" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">06</span> &gt; cat /var/log/x-factor</div>
+    <h2 class="sec-title">Why I'd be a useful person to hire.</h2>
+  </div>
+
+  <div class="xfactor reveal">
+    <div class="xf-quote">// reflection from my I-Talent portfolio</div>
+    <div class="xf-grid">
+      <div class="xf-item">
+        <div class="label">Passion</div>
+        <p>Grown through personal projects and great teams. The mods, the game jam, the homelab — none of it was assigned. It's how I learn.</p>
+      </div>
+      <div class="xf-item">
+        <div class="label">Entrepreneurial</div>
+        <p>Initiated a cross-branch Teams channel as an intern with direct lines to head projects, head security, sales and SOC. Added myself to the Cardiff trip with a single email.</p>
+      </div>
+      <div class="xf-item">
+        <div class="label">International</div>
+        <p>Cardiff internationalisation week, internship in the Netherlands, and collaboration with a Spanish SOC team in Valencia. Comfortable in professional English.</p>
+      </div>
+      <div class="xf-item">
+        <div class="label">Multi-disciplinary</div>
+        <p>From Python basics to production security services. From IT student to game-jam podium finisher. From "what is BeepBox" to actually composing the soundtrack.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== CONTACT ============== -->
+<section id="contact" class="wrap">
+  <div class="sec-head reveal">
+    <div class="sec-eyebrow"><span class="num">07</span> &gt; mailto:</div>
+    <h2 class="sec-title">Let's talk cloud, DevOps — or Isaac mods.</h2>
+  </div>
+
+  <div class="contact-card reveal">
+    <h3>$ open mailto:</h3>
+    <p class="sub">Recruiters, classmates, collaborators — the inbox is open.</p>
+
+    <div class="email-row">
+      <div class="email-display">
+        <span style="color:var(--accent);">›</span>
+        <span id="email-text"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d3bab2bdfda7b6a1a1aabd93a0a7a6b7b6bda7fda3abbffdb1b6">[email&#160;protected]</a></span>
+      </div>
+      <button id="copy-btn" class="copy-btn"><span id="copy-label">copy email</span></button>
+      <a class="btn btn-ghost" href="/cdn-cgi/l/email-protection#1f767e71316b7a6d6d66715f6c6b6a7b7a716b316f6773317d7a">send mail <span class="arrow">→</span></a>
+    </div>
+
+    <div class="links-grid">
+      <a class="link-card" href="#" target="_blank" rel="noopener">
+        <div class="lk">// github</div>
+        <div class="lh">github.com/&lt;handle&gt; <span class="arr">↗</span></div>
+      </a>
+      <a class="link-card" href="#" target="_blank" rel="noopener">
+        <div class="lk">// linkedin</div>
+        <div class="lh">linkedin.com/in/&lt;handle&gt; <span class="arr">↗</span></div>
+      </a>
+      <a class="link-card" href="https://nucleargoomba.itch.io" target="_blank" rel="noopener">
+        <div class="lk">// itch.io</div>
+        <div class="lh">nucleargoomba.itch.io <span class="arr">↗</span></div>
+      </a>
+      <a class="link-card" href="https://steamcommunity.com/profiles/76561198350274866/myworkshopfiles/?appid=250900" target="_blank" rel="noopener" style="grid-column: span 2;">
+        <div class="lk">// steam workshop · all mods</div>
+        <div class="lh">isaac mods, weekly cadence <span class="arr">↗</span></div>
+      </a>
+    </div>
+
+    <p style="margin-top:18px;font-family:var(--mono);font-size:11.5px;color:var(--dim);">
+      // note: github &amp; linkedin URLs above are placeholders — replace before publishing.
+    </p>
+  </div>
+</section>
+
+<!-- ============== NOW WIDGET ============== -->
+<aside class="now-widget hidden" id="now-widget" aria-label="Currently doing">
+  <div class="head">
+    <div class="title"><span class="live"></span> /now</div>
+    <div class="x" id="now-x" title="dismiss">×</div>
+  </div>
+  <div class="row">
+    <span class="lbl">working on</span>
+    <span class="val">Security services @ Open Line, NL</span>
+  </div>
+  <div class="row">
+    <span class="lbl">latest mod</span>
+    <span class="val">Willo Enemy AI</span>
+  </div>
+  <div class="row">
+    <span class="lbl">currently learning</span>
+    <span class="val">Azure networking · IaC patterns</span>
+  </div>
+</aside>
+
+<!-- ============== HTOP FOOTER ============== -->
+<footer class="htop">
+  <div class="htop-inner">
+    <div class="htop-bar"><div class="lbl">CPU [</div><div class="meter"><div class="fill" id="cpu-fill" style="width: 71%;"></div><div class="lbl-in">71% — passion</div></div></div>
+    <div class="htop-bar"><div class="lbl">MEM [</div><div class="meter"><div class="fill cy" style="width: 58%;"></div><div class="lbl-in">58% — caffeine</div></div></div>
+    <div class="htop-bar"><div class="lbl">SWAP [</div><div class="meter"><div class="fill go" style="width: 22%;"></div><div class="lbl-in">22% — sleep</div></div></div>
+    <div class="htop-foot">
+      <div>Ian Terryn — Portfolio I-Talent 2025–2026 — PXL Hogeschool</div>
+      <div class="end">$ exit 0</div>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ===================== BOOT SEQUENCE ===================== */
+(function(){
+  const lines = [
+    '[ OK ] mounting /home/ian',
+    '[ OK ] starting curiosity.service',
+    '[ OK ] starting fast-learner.service',
+    '[ WARN ] sleep.service degraded',
+    '[ OK ] loading portfolio.json . . .',
+    '[ DONE ] welcome, recruiter ▌'
+  ];
+  const out = document.getElementById('boot-text');
+  let i = 0, j = 0;
+  let skipped = false;
+
+  function finish(){
+    if(skipped) return;
+    skipped = true;
+    document.body.classList.add('booted');
+    setTimeout(() => { const b = document.getElementById('boot'); if(b) b.remove(); }, 600);
+  }
+
+  function type(){
+    if(skipped) return;
+    if(i >= lines.length){ setTimeout(finish, 350); return; }
+    const line = lines[i];
+    if(j < line.length){
+      out.innerHTML += line[j] === '<' ? '&lt;' : line[j];
+      j++;
+      setTimeout(type, 14 + Math.random() * 14);
+    } else {
+      // colorize the line
+      const html = out.innerHTML.replace(/(\[ OK \])$/, '<span class="ok">$1</span>')
+                                .replace(/(\[ WARN \])$/, '<span class="warn">$1</span>')
+                                .replace(/(\[ DONE \])$/, '<span class="ok">$1</span>');
+      out.innerHTML = html + '\n';
+      i++; j = 0;
+      setTimeout(type, 90);
+    }
+  }
+  setTimeout(type, 250);
+
+  document.getElementById('boot').addEventListener('click', finish);
+  window.addEventListener('keydown', (e) => {
+    if(!document.body.classList.contains('booted')) finish();
+  }, {once: false});
+})();
+
+/* ===================== CLOCK & CPU TRAY ===================== */
+(function(){
+  const clk = document.getElementById('clock');
+  const cpuTray = document.getElementById('cpu-tray');
+  const cpuFill = document.getElementById('cpu-fill');
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick(){
+    const d = new Date();
+    clk.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    const cpu = Math.round(60 + Math.sin(Date.now()/2400) * 18 + Math.random() * 6);
+    cpuTray.textContent = 'cpu ' + cpu + '%';
+    if(cpuFill) cpuFill.style.width = cpu + '%';
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+/* ===================== REVEAL ON SCROLL ===================== */
+(function(){
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold: 0.12, rootMargin: "0px 0px -40px 0px"});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+/* ===================== SCROLL SPY ===================== */
+(function(){
+  const links = [...document.querySelectorAll('#os-menu a')];
+  const sections = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  function setActive(id){
+    links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+  }
+  const spy = new IntersectionObserver((entries) => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+    if(visible.length) setActive(visible[0].target.id);
+  }, {rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.25, 0.5, 0.75, 1]});
+  sections.forEach(s => spy.observe(s));
+})();
+
+/* ===================== INTERACTIVE TERMINAL ===================== */
+(function(){
+  const body = document.getElementById('term-body');
+  const input = document.getElementById('term-input');
+  if(!body || !input) return;
+
+  const history = [];
+  let hIdx = -1;
+
+  const RESPONSES = {
+    whoami: () => 'ian terryn — alias: <span class="ok">nucleargoomba</span> · IT student @ PXL · interning at Open Line (NL).',
+    about: () => 'cloud-curious, fast learner, podium finisher, mod author. <span class="dim">// see #about</span>',
+    skills: () => '<span class="ok">cloud</span>: azure-networking, multi-cloud, iac<br>' +
+                  '<span class="ok">security</span>: pentesting, secure-sd-wan, identity, ethical-hacking<br>' +
+                  '<span class="ok">dev</span>: python, docker, gdscript, lua, webscraping<br>' +
+                  '<span class="ok">soft</span>: fast-learner, team-lead, en-fluent · <span class="dim">// see #skills</span>',
+    projects: () => '1337  lessi-smore.godot   <span class="warn">🏆 3rd · jam</span><br>' +
+                    '2042  homelab-scraper.py  <span class="dim">// docker on homelab</span><br>' +
+                    '3141  mcp-chatbot.team    <span class="dim">// IT-project</span> · <span class="dim">see #projects</span>',
+    mods: () => 'isaac mods · weekly drops on the workshop:<br><a href="https://steamcommunity.com/profiles/76561198350274866/myworkshopfiles/?appid=250900" target="_blank">steamcommunity.com/profiles/.../myworkshopfiles</a>',
+    contact: () => 'mail: <a href="mailto:ian.terryn@student.pxl.be">ian.terryn@student.pxl.be</a><br>itch: <a href="https://nucleargoomba.itch.io" target="_blank">nucleargoomba.itch.io</a>',
+    jam: () => '<span class="warn">🏆 3rd place</span> · UHasselt Student Game Jam 2 · <span class="ok">Lessi Smore</span> (Godot, 72h, 3 people, first time).<br>play: <a href="https://nucleargoomba.itch.io/lessi-smore" target="_blank">nucleargoomba.itch.io/lessi-smore</a>',
+    help: () => '<span class="dim">// available commands:</span><br><span class="ok">whoami about skills projects mods contact jam sudo clear help</span>',
+    'sudo make-coffee': () => '<span class="warn">brewing… ☕</span> done. caffeine.service started successfully.',
+    'sudo': () => '<span class="err">user is not in the sudoers file. this incident will be reported.</span> <span class="dim">(try `sudo make-coffee`)</span>',
+    'sudo hire-me': () => '<span class="ok">✓ creating offer letter…</span> mail draft saved to ian.terryn@student.pxl.be',
+    'rm -rf /': () => '<span class="err">nice try.</span>',
+    ls: () => 'about.md  skills.json  projects/  mods/  contact.vcf  README.md  .secrets',
+    cat: () => '<span class="dim">usage:</span> cat about.md',
+    'cat about.md': () => RESPONSES.about(),
+    'cat readme.md': () => 'see #about · #projects · #mods · /now widget on the right.',
+    pwd: () => '/home/ian/portfolio',
+    date: () => new Date().toString(),
+    uname: () => 'ian-os 2.6.0-pxl #1 SMP belgium x86_64 GNU/Linux',
+    konami: () => '<span class="warn">↑↑↓↓←→←→BA</span> — try the keys, not the word.',
+  };
+
+  function appendLine(html, isCmd){
+    const div = document.createElement('div');
+    div.className = 'term-line';
+    if(isCmd){
+      div.innerHTML = '<span class="term-prompt"><span class="user">ian</span><span class="at">@</span><span class="host">portfolio</span><span class="arrow">:</span><span class="path">~</span><span class="arrow">$</span></span> <span class="term-cmd">' + html + '</span>';
+    } else {
+      div.classList.add('term-out');
+      div.innerHTML = html;
+    }
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function run(raw){
+    const cmd = raw.trim();
+    if(!cmd) return;
+    appendLine(escapeHtml(cmd), true);
+    history.push(cmd); hIdx = history.length;
+
+    if(cmd === 'clear'){ body.innerHTML = ''; return; }
+
+    let out = RESPONSES[cmd.toLowerCase()];
+    if(typeof out === 'function') out = out();
+    if(!out){
+      // partial match: cat <file>
+      if(cmd.toLowerCase().startsWith('cat ')){
+        out = RESPONSES['cat ' + cmd.slice(4).toLowerCase()] || '<span class="err">cat: ' + escapeHtml(cmd.slice(4)) + ': No such file or directory</span>';
+      } else if(cmd.toLowerCase().startsWith('sudo ')){
+        out = RESPONSES['sudo'];
+        if(typeof out === 'function') out = out();
+      } else {
+        out = '<span class="err">command not found:</span> ' + escapeHtml(cmd) + ' <span class="dim">(try `help`)</span>';
+      }
+    }
+    appendLine(out, false);
+  }
+
+  function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ run(input.value); input.value = ''; }
+    else if(e.key === 'ArrowUp'){
+      if(history.length){ hIdx = Math.max(0, hIdx - 1); input.value = history[hIdx] || ''; }
+      e.preventDefault();
+    } else if(e.key === 'ArrowDown'){
+      if(history.length){ hIdx = Math.min(history.length, hIdx + 1); input.value = history[hIdx] || ''; }
+      e.preventDefault();
+    } else if(e.key === 'Tab'){
+      e.preventDefault();
+      const v = input.value.toLowerCase();
+      const cands = Object.keys(RESPONSES).filter(k => k.startsWith(v));
+      if(cands.length === 1) input.value = cands[0];
+    }
+  });
+
+  // focus input when clicking inside terminal
+  document.getElementById('term').addEventListener('click', (e) => {
+    if(e.target.tagName !== 'A') input.focus();
+  });
+
+  // make terminal draggable by its bar
+  const term = document.getElementById('term');
+  const bar = document.getElementById('term-bar');
+  let dragging = false, startX, startY, baseX = 0, baseY = 0;
+  bar.addEventListener('mousedown', (e) => {
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if(!dragging) return;
+    const dx = e.clientX - startX + baseX;
+    const dy = e.clientY - startY + baseY;
+    term.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+  });
+  window.addEventListener('mouseup', (e) => {
+    if(!dragging) return;
+    baseX += e.clientX - startX;
+    baseY += e.clientY - startY;
+    dragging = false;
+  });
+  // double-click bar to reset
+  bar.addEventListener('dblclick', () => {
+    baseX = 0; baseY = 0; term.style.transform = '';
+  });
+})();
+
+/* ===================== GIT LOG FILTER ===================== */
+(function(){
+  const btns = document.querySelectorAll('.git-toolbar button');
+  const items = document.querySelectorAll('#gitlog-body .commit');
+  btns.forEach(b => b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('is-active'));
+    b.classList.add('is-active');
+    const f = b.dataset.filter;
+    items.forEach(c => {
+      c.style.display = (f === 'all' || c.dataset.cat === f) ? '' : 'none';
+    });
+  }));
+})();
+
+/* ===================== COPY EMAIL ===================== */
+(function(){
+  const btn = document.getElementById('copy-btn');
+  const lbl = document.getElementById('copy-label');
+  const txt = document.getElementById('email-text');
+  btn.addEventListener('click', async () => {
+    const v = txt.textContent.trim();
+    try{ await navigator.clipboard.writeText(v); }
+    catch(_){ const ta = document.createElement('textarea'); ta.value = v; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    btn.classList.add('copied'); lbl.textContent = '✓ copied';
+    setTimeout(() => { btn.classList.remove('copied'); lbl.textContent = 'copy email'; }, 1800);
+  });
+})();
+
+/* ===================== /NOW WIDGET ===================== */
+(function(){
+  const w = document.getElementById('now-widget');
+  const x = document.getElementById('now-x');
+  setTimeout(() => { if(document.body.classList.contains('booted')) w.classList.remove('hidden'); else setTimeout(() => w.classList.remove('hidden'), 1200); }, 1800);
+  x.addEventListener('click', () => w.classList.add('hidden'));
+})();
+
+/* ===================== CURSOR TRAIL (hold shift) ===================== */
+(function(){
+  let shift = false;
+  window.addEventListener('keydown', (e) => { if(e.key === 'Shift') shift = true; });
+  window.addEventListener('keyup', (e) => { if(e.key === 'Shift') shift = false; });
+  let last = 0;
+  window.addEventListener('mousemove', (e) => {
+    if(!shift) return;
+    const t = Date.now();
+    if(t - last < 22) return;
+    last = t;
+    const d = document.createElement('div');
+    d.className = 'trail-dot';
+    d.style.left = (e.clientX - 2) + 'px';
+    d.style.top = (e.clientY - 2) + 'px';
+    document.body.appendChild(d);
+    requestAnimationFrame(() => {
+      d.style.opacity = '0';
+      d.style.transform = 'translate(' + ((Math.random() - 0.5) * 30) + 'px, ' + ((Math.random() - 0.5) * 30) + 'px) scale(2.5)';
+    });
+    setTimeout(() => d.remove(), 800);
+  });
+})();
+
+/* ===================== KONAMI: FIRE MODE ===================== */
+(function(){
+  const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let i = 0;
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if(k === seq[i]){
+      i++;
+      if(i === seq.length){
+        document.body.classList.toggle('fire');
+        i = 0;
+      }
+    } else {
+      i = (k === seq[0]) ? 1 : 0;
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
